@@ -35,13 +35,13 @@ export default function Chat() {
   useEffect(async () => {
     if (currentUser) {
       if (currentUser.isAvatarImageSet) {
-        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
-        setContacts(data.data);
+        const data = await axios.get(`${host}${allUsersRoute}/${currentUser._id}`);
+        setContacts(Array.isArray(data.data) ? data.data : []);
       } else {
         navigate("/setAvatar");
       }
     }
-  }, [currentUser, navigate, allUsersRoute]);
+  }, [currentUser, navigate, allUsersRoute, host]);
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
   };

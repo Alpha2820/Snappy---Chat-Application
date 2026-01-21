@@ -4,7 +4,7 @@ import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
+import { sendMessageRoute, recieveMessageRoute, host } from "../utils/APIRoutes";
 
 export default function ChatContainer({ currentChat, socket }) {
   const [messages, setMessages] = useState([]);
@@ -16,11 +16,11 @@ export default function ChatContainer({ currentChat, socket }) {
       const data = await JSON.parse(
         localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
       );
-      const response = await axios.post(recieveMessageRoute, {
+      const response = await axios.post(`${host}${recieveMessageRoute}`, {
         from: data._id,
         to: currentChat._id,
       });
-      setMessages(response.data);
+      setMessages(Array.isArray(response.data) ? response.data : []);
     };
     if (currentChat) fetchMessages();
   }, [currentChat]);
@@ -34,7 +34,7 @@ export default function ChatContainer({ currentChat, socket }) {
       from: data._id,
       msg,
     });
-    await axios.post(sendMessageRoute, {
+    await axios.post(`${host}${sendMessageRoute}`, {
       from: data._id,
       to: currentChat._id,
       message: msg,
