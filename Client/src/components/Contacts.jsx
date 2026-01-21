@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
 import axios from "axios";
-import { host } from "../utils/APIRoutes";
 
 export default function Contacts({ contacts = [], changeChat }) {
   const [currentUserName, setCurrentUserName] = useState("");
@@ -23,7 +22,7 @@ export default function Contacts({ contacts = [], changeChat }) {
         setCurrentUserImage(data.avatarImage);
 
         const res = await axios.get(
-          `${host}/api/messages/unread-counts/${data._id}`,
+          `/api/messages/unread-counts/${data._id}`,
           { withCredentials: true }
         );
 
