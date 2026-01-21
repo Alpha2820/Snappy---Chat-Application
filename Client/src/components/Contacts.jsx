@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
 import axios from "axios";
+import { host } from "../utils/APIRoutes";
 
 export default function Contacts({ contacts, changeChat }) {
   const [currentUserName, setCurrentUserName] = useState(undefined);
@@ -15,11 +16,13 @@ export default function Contacts({ contacts, changeChat }) {
       );
       setCurrentUserName(data.username);
       setCurrentUserImage(data.avatarImage);
-      const res = await axios.get(`/api/messages/unread-counts/${data._id}`);
+      const res = await axios.get(`${host}/api/messages/unread-counts/${data._id}`);
       const counts = {};
-      res.data.forEach((item) => {
-        counts[item._id] = item.count;
-      });
+      if (Array.isArray(res.data)) {
+        res.data.forEach((item) => {
+          counts[item._id] = item.count;
+        });
+      }
       setUnreadCounts(counts);
     };
     fetchData();
@@ -30,7 +33,7 @@ export default function Contacts({ contacts, changeChat }) {
     const data = await JSON.parse(
       localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
     );
-    await axios.post("/api/messages/mark-read", {
+    await axios.post(`${host}/api/messages/mark-read`, {
       from: contact._id,
       to: data._id,
     });
