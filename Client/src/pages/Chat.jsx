@@ -41,7 +41,7 @@ export default function Chat() {
         navigate("/setAvatar");
       }
     }
-  }, [currentUser]);
+  }, [currentUser, navigate, allUsersRoute]);
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
   };
