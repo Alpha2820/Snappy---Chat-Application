@@ -4,43 +4,75 @@ import Logo from "../assets/logo.svg";
 import axios from "axios";
 import { host } from "../utils/APIRoutes";
 
-export default function Contacts({ contacts, changeChat }) {
-  const [currentUserName, setCurrentUserName] = useState(undefined);
-  const [currentUserImage, setCurrentUserImage] = useState(undefined);
-  const [currentSelected, setCurrentSelected] = useState(undefined);
+export default function Contacts({ contacts = [], changeChat }) {
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [currentUserImage, setCurrentUserImage] = useState("");
+  const [currentSelected, setCurrentSelected] = useState(null);
   const [unreadCounts, setUnreadCounts] = useState({});
+
   useEffect(() => {
     const fetchData = async () => {
-      const data = await JSON.parse(
-        localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-      );
-      setCurrentUserName(data.username);
-      setCurrentUserImage(data.avatarImage);
-      const res = await axios.get(`${host}/api/messages/unread-counts/${data._id}`);
-      const counts = {};
-      if (Array.isArray(res.data)) {
-        res.data.forEach((item) => {
-          counts[item._id] = item.count;
-        });
+      try {
+        const stored = localStorage.getItem(
+          process.env.REACT_APP_LOCALHOST_KEY
+        );
+        if (!stored) return;
+
+        const data = JSON.parse(stored);
+        setCurrentUserName(data.username);
+        setCurrentUserImage(data.avatarImage);
+
+        const res = await axios.get(
+          `${host}/api/messages/unread-counts/${data._id}`,
+          { withCredentials: true }
+        );
+
+        const counts = {};
+        if (Array.isArray(res.data)) {
+          res.data.forEach((item) => {
+            counts[item._id] = item.count;
+          });
+        }
+
+        setUnreadCounts(counts);
+      } catch (error) {
+        console.error("Contacts fetch error:", error);
       }
-      setUnreadCounts(counts);
     };
+
     fetchData();
   }, [contacts]);
-  const changeCurrentChat = async (index, contact) => {
-    setCurrentSelected(index);
-    changeChat(contact);
-    const data = await JSON.parse(
-      localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-    );
-    await axios.post(`${host}/api/messages/mark-read`, {
-      from: contact._id,
-      to: data._id,
-    });
 
-    // Set unread count to 0 for this contact
-    setUnreadCounts((prev) => ({ ...prev, [contact._id]: 0 }));
+  const changeCurrentChat = async (index, contact) => {
+    try {
+      setCurrentSelected(index);
+      changeChat(contact);
+
+      const stored = localStorage.getItem(
+        process.env.REACT_APP_LOCALHOST_KEY
+      );
+      if (!stored) return;
+
+      const data = JSON.parse(stored);
+
+      await axios.post(
+        `${host}/api/messages/mark-read`,
+        {
+          from: contact._id,
+          to: data._id,
+        },
+        { withCredentials: true }
+      );
+
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [contact._id]: 0,
+      }));
+    } catch (error) {
+      console.error("Mark read error:", error);
+    }
   };
+
   return (
     <>
       {currentUserImage && (
@@ -49,9 +81,10 @@ export default function Contacts({ contacts, changeChat }) {
             <img src={Logo} alt="logo" />
             <h3>snappy</h3>
           </div>
+
           <div className="contacts">
-            {contacts.map((contact, index) => {
-              return (
+            {Array.isArray(contacts) &&
+              contacts.map((contact, index) => (
                 <div
                   key={contact._id}
                   className={`contact ${
@@ -62,9 +95,10 @@ export default function Contacts({ contacts, changeChat }) {
                   <div className="avatar">
                     <img
                       src={`data:image/svg+xml;base64,${contact.avatarImage}`}
-                      alt=""
+                      alt="avatar"
                     />
                   </div>
+
                   <div className="username">
                     <h3>{contact.username}</h3>
                     {unreadCounts[contact._id] > 0 && (
@@ -74,14 +108,14 @@ export default function Contacts({ contacts, changeChat }) {
                     )}
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
+
           <div className="current-user">
             <div className="avatar">
               <img
                 src={`data:image/svg+xml;base64,${currentUserImage}`}
-                alt="avatar"
+                alt="current user"
               />
             </div>
             <div className="username">
@@ -93,38 +127,45 @@ export default function Contacts({ contacts, changeChat }) {
     </>
   );
 }
+
 const Container = styled.div`
   display: grid;
   grid-template-rows: 10% 75% 15%;
   overflow: hidden;
   background-color: #080420;
+
   .brand {
     display: flex;
     align-items: center;
     gap: 1rem;
     justify-content: center;
+
     img {
       height: 2rem;
     }
+
     h3 {
       color: white;
       text-transform: uppercase;
     }
   }
+
   .contacts {
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow: auto;
     gap: 0.8rem;
+
     &::-webkit-scrollbar {
       width: 0.2rem;
-      &-thumb {
-        background-color: #ffffff39;
-        width: 0.1rem;
-        border-radius: 1rem;
-      }
     }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #ffffff39;
+      border-radius: 1rem;
+    }
+
     .contact {
       background-color: #ffffff34;
       min-height: 5rem;
@@ -135,20 +176,15 @@ const Container = styled.div`
       display: flex;
       gap: 1rem;
       align-items: center;
-      transition: 0.5s ease-in-out;
-      .avatar {
-        img {
-          height: 3rem;
-        }
-      }
-      .username {
-        h3 {
-          color: white;
-        }
-      }
+      transition: 0.3s ease-in-out;
     }
+
     .selected {
       background-color: #9a86f3;
+    }
+
+    .username h3 {
+      color: white;
     }
   }
 
@@ -158,26 +194,16 @@ const Container = styled.div`
     justify-content: center;
     align-items: center;
     gap: 2rem;
-    .avatar {
-      img {
-        height: 4rem;
-        max-inline-size: 100%;
-      }
+
+    img {
+      height: 4rem;
     }
-    .username {
-      h2 {
-        color: white;
-      }
-    }
-    @media screen and (min-width: 720px) and (max-width: 1080px) {
-      gap: 0.5rem;
-      .username {
-        h2 {
-          font-size: 1rem;
-        }
-      }
+
+    h2 {
+      color: white;
     }
   }
+
   .unread-badge {
     background: #ff3b3b;
     color: white;
