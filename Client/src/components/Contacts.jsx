@@ -8,6 +8,8 @@ export default function Contacts({ contacts = [], changeChat }) {
   const [currentUserImage, setCurrentUserImage] = useState("");
   const [currentSelected, setCurrentSelected] = useState(null);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const host = process.env.REACT_APP_SERVER_URL;
+
 
   useEffect(() => {
     const fetchData = async () => {
